@@ -1,10 +1,24 @@
-(ns sio.handler
+(ns sio.netty
   (:import
     [org.jboss.netty.channel
      ChannelUpstreamHandler ChannelDownstreamHandler
      ChannelPipelineFactory Channels ChannelHandler
      MessageEvent WriteCompletionEvent ChannelStateEvent
-     ExceptionEvent ChannelState]))
+     ExceptionEvent ChannelState]
+    [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
+    [org.jboss.netty.bootstrap ServerBootstrap]
+    [java.util.concurrent Executors]
+    [java.net InetSocketAddress]))
+
+;for now we create a new channel handler for each new pipeline (connection)
+;this allows us to reload the ns for interactive development
+;later we can have a single handler for all pipelines (handler will be stateless anyway)
+(defn create-pipeline-factory [& handlers]
+  (reify
+    ChannelPipelineFactory
+    (getPipeline [_]
+                 (Channels/pipeline
+                   (into-array ChannelHandler handlers)))))
 
 (defn simple-channel-handler [msg-handlers]
   (let [handle-up (fn [msg ctx event]
@@ -60,4 +74,15 @@
                               ))
                           :else (.sendDownstream ctx event)
                           )))))
+
+(defn simple-server [pipeline-factory port]
+  (let [factory (new NioServerSocketChannelFactory
+                     (Executors/newCachedThreadPool)
+                     (Executors/newCachedThreadPool))
+        bootstrap (new ServerBootstrap factory)]
+    (doto bootstrap
+      (.setPipelineFactory pipeline-factory)
+      (.setOption "child.tcpNoDelay" true)
+      (.setOption "child.keepAlive" true)
+      (.bind (new InetSocketAddress port)))))
 
