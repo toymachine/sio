@@ -12,6 +12,7 @@
    [java.net InetSocketAddress]
    [org.jboss.netty.handler.codec.http HttpChunkAggregator HttpRequestDecoder HttpResponseEncoder]
    [org.jboss.netty.handler.codec.http DefaultHttpResponse HttpVersion HttpResponseStatus HttpHeaders]
+   [org.jboss.netty.handler.codec.http.websocket DefaultWebSocketFrame WebSocketFrameEncoder WebSocketFrameDecoder]
    [org.jboss.netty.buffer ChannelBuffers]
    [org.jboss.netty.util CharsetUtil]))
 
@@ -45,6 +46,27 @@
         (.addLast "aggregator" (new HttpChunkAggregator 65536))
         (.addLast "encoder" (new HttpResponseEncoder))
         (.addLast "handler" (handler-factory))))))
+
+(defn websocket-upgrade [ctx response]
+  (let [channel (.getChannel ctx)
+        pipeline (.getPipeline channel)]
+    ;(.remove pipeline "aggregator")
+    ;(.replace pipeline "decoder", "wsdecoder", (new WebSocketFrameDecoder))
+    (.write channel response)
+    (println "upgrade response written")
+    ;(.replace pipeline "encoder", "wsencoder", (new WebSocketFrameEncoder))
+    ))
+
+(defn websocket-handshake-response [request]
+  (let [response (new DefaultHttpResponse HttpVersion/HTTP_1_1
+                      (new HttpResponseStatus 101 "Web Socket Protocol Handshake"))]
+    (when-let [protocol (.getHeader "WebSocket-Protocol")]
+      (.addHeader response "WebSocket-Protocol protocol"))
+    (doto response
+      (.addHeader "Upgrade" "WebSocket")
+      (.addHeader "Connection" "Upgrade")
+      (.addHeader "WebSocket-Origin" (.getHeader request "Origin"))
+      (.addHeader "WebSocket-Location" "ws://localhost:8080/websocket"))))
 
 (defn simple-html-response [msg]
   (let [response (new DefaultHttpResponse HttpVersion/HTTP_1_0 HttpResponseStatus/OK)

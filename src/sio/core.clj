@@ -4,15 +4,20 @@
 (defn handle-http-request [ctx resource-path]
   (netty/write ctx (netty/simple-html-response (slurp resource-path))))
 
+(defn handle-websocket-request [ctx request]
+  (let [response (netty/websocket-handshake-response request)]
+    (println "upgrayyed")
+    (netty/websocket-upgrade ctx response)))
+  
 (defn http-message-received [ctx event]
   (let [request (.getMessage event)
         uri (.getUri request)]
     (case uri
       "/" (handle-http-request ctx "static/index.html")
+      "/websocket" (handle-websocket-request ctx request)
       (handle-http-request ctx "static/notfound.html"))))
 
 (defn http-handler []
-  (println "new http handler2")
   (netty/simple-channel-handler
    {:message-received http-message-received
     :channel-connected (fn [ctx event] (println "http-connected!"))
