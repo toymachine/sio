@@ -3,13 +3,24 @@
     [org.jboss.netty.channel
      ChannelUpstreamHandler ChannelDownstreamHandler
      ChannelPipelineFactory Channels ChannelHandler
+     ChannelHandlerContext
      MessageEvent WriteCompletionEvent ChannelStateEvent
      ExceptionEvent ChannelState]
     [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
     [org.jboss.netty.bootstrap ServerBootstrap]
     [java.util.concurrent Executors]
     [java.net InetSocketAddress]
-    [org.jboss.netty.handler.codec.http HttpChunkAggregator HttpRequestDecoder HttpResponseEncoder]))
+    [org.jboss.netty.handler.codec.http HttpChunkAggregator HttpRequestDecoder HttpResponseEncoder]
+    [org.jboss.netty.handler.codec.http DefaultHttpResponse HttpVersion HttpResponseStatus HttpHeaders]
+    [org.jboss.netty.buffer ChannelBuffers]
+    [org.jboss.netty.util CharsetUtil]))
+
+(defprotocol Writeable
+  (write [this msg]))
+
+(extend-type ChannelHandlerContext
+  Writeable
+  (write [ctx msg] (.write (.getChannel ctx) msg)))
 
 (defn create-pipeline-factory [& handlers]
   (reify
@@ -34,6 +45,13 @@
                    (.addLast "aggregator" (new HttpChunkAggregator 65536))
                    (.addLast "encoder" (new HttpResponseEncoder))
                    (.addLast "handler" handler)))))
+
+(defn simple-http-response [msg]
+  (let [response (new DefaultHttpResponse HttpVersion/HTTP_1_0 HttpResponseStatus/OK)
+        buffer (ChannelBuffers/copiedBuffer msg CharsetUtil/UTF_8)]
+      (.setContent response buffer)
+      (HttpHeaders/setContentLength response (.readableBytes buffer))
+      response))
 
 (defn simple-channel-handler [msg-handlers]
   (let [handle-up (fn [msg ctx event]
