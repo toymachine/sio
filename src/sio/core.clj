@@ -9,9 +9,15 @@
     [java.net InetSocketAddress]))
 
 (def msg-handlers {:message-received
-                   (fn [ctx event] (println "msg!"))
+                   (fn [ctx event]
+                     ;echo
+                     (let [channel (.getChannel event)
+                           message (.getMessage event)]
+                       (.write channel message)))
                    :channel-connected
-                   (fn [ctx event] (println "connected!"))})
+                   (fn [ctx event] (println "connected!"))
+                   :channel-disconnected
+                   (fn [ctx event] (println "disconnected"))})
 
 ;for now we create a new channel handler for each new pipeline (connection)
 ;this allows us to reload the ns for interactive development
