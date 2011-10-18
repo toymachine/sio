@@ -8,17 +8,32 @@
     [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
     [org.jboss.netty.bootstrap ServerBootstrap]
     [java.util.concurrent Executors]
-    [java.net InetSocketAddress]))
+    [java.net InetSocketAddress]
+    [org.jboss.netty.handler.codec.http HttpChunkAggregator HttpRequestDecoder HttpResponseEncoder]))
 
-;for now we create a new channel handler for each new pipeline (connection)
-;this allows us to reload the ns for interactive development
-;later we can have a single handler for all pipelines (handler will be stateless anyway)
 (defn create-pipeline-factory [& handlers]
   (reify
     ChannelPipelineFactory
     (getPipeline [_]
                  (Channels/pipeline
                    (into-array ChannelHandler handlers)))))
+
+(defn create-pipeline-factory-fn [& handler-funcs]
+  (reify
+    ChannelPipelineFactory
+    (getPipeline [_]
+                 (Channels/pipeline
+                   (into-array ChannelHandler ((apply juxt handler-funcs)) )))))
+
+(defn create-http-pipeline-factory [handler]
+  (reify
+    ChannelPipelineFactory
+    (getPipeline [_]
+                 (doto (Channels/pipeline)
+                   (.addLast "decoder" (new HttpRequestDecoder))
+                   (.addLast "aggregator" (new HttpChunkAggregator 65536))
+                   (.addLast "encoder" (new HttpResponseEncoder))
+                   (.addLast "handler" handler)))))
 
 (defn simple-channel-handler [msg-handlers]
   (let [handle-up (fn [msg ctx event]
