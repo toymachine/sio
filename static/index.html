@@ -5,25 +5,9 @@
     <link rel="shortcut icon" href="http://www.nu.nl/images/favicon.ico" type="image/x-icon">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js" type="text/javascript"></script>
+    <script src="/static/index.js" type="text/javascript"></script>
   </head>
-  <script>
-    $(document).ready(function() {
-   
-
-    ws = new WebSocket("ws://localhost:8080/websocket"); 
-    ws.onopen = function(event) { 
-       console.log("The WebSocket Connection Is Open."); 
-    }
-    ws.onmessage = function(event) { 
-       console.log("Result= "+event.data); 
-    }
-    ws.onclose = function(event) { 
-       console.log("The WebSocket Connection Has Been Closed."); 
-    }
-
-    });
-  </script>
   <body>
-    <h3>websocket test!</h3>
+    <h3>websocket test!!</h3>
   </body>
 </html>
