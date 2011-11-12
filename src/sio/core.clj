@@ -16,11 +16,11 @@
   (if-let [handshaker (.newHandshaker *ws-handshaker-factory* ctx request)]
     (do
       (println "exec opening handshake")
-      (.executeOpeningHandshake handshaker handshaker ctx request)
+      (.executeOpeningHandshake handshaker ctx request)
       (println "opening handshake send"))
     (do
       (println "unsupported websocket version response")
-      (.sendUnsupportedWebSocketVersionResponse *ws-handshaker-factory* ctx ctx))))
+      (.sendUnsupportedWebSocketVersionResponse *ws-handshaker-factory* ctx))))
     
 (defn handle-websocket-frame [ctx frame]
   (println "handle ws frame" frame)
