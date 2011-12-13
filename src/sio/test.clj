@@ -1,31 +1,32 @@
 (ns sio.test)
 
-(defn hello []
-  (println "Hello World!"))
+(set! *warn-on-reflection* true)
 
-(defprotocol Blaat
-  (aap [this b]))
+(deftype State [x v])
 
-(deftype X [ax bx]
-  Blaat
-  (aap [this b]
-       (+ ax bx b)))
+(deftype Derivative [dx dv])
 
-(deftype Y [ax bx]
-  Blaat
-  (aap [this b]
-       (- ax bx b)))
+(def FORCE 10)
+(def MASS 1)
 
-(def xx
-  (let [ax 20
-        bx 20]
-    (reify Blaat
-      (aap [this b]
-           (* ax bx b)))))
+(println (/ FORCE MASS))
 
-(println (aap (X. 10 20) 30))
-(println (aap (Y. 10 20) 30))
+(defn euler [^State s dt]
+  (let [x (+ (.x s) (* (.v s) dt))
+        v (+ (.v s) (* (/ FORCE MASS) dt))]
+    (State. x v)))
 
-(println (aap xx 30))
+(defn pstat [t ^State s]
+  (println t "pos" (.x s) "vel" (.v s)))
 
-(println (butlast (concat [1 2] [3 4])))
+(defn sim [end step init]
+  (loop [t 0
+         s init]
+    (when (<= t end)
+      (let [s2 (euler s step)]
+        (pstat t s)
+        (recur (+ t step) s2)))))
+
+(sim 10 1 (State. 0 0))
+
+  
