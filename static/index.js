@@ -1,5 +1,7 @@
 $(document).ready(function() {
-       
+
+	console.log("createing websocket!");
+
     ws = new WebSocket("ws://localhost:8080/websocket"); 
     ws.onopen = function(event) { 
 	console.log("The WebSocket Connection Is Open."); 
@@ -10,5 +12,10 @@ $(document).ready(function() {
     ws.onclose = function(event) { 
 	console.log("The WebSocket Connection Has Been Closed."); 
     }
-    
+ 
+    $('#send').click(function() {
+	    var msg = $('#msg').val();
+	    console.log('sending: ' + msg);
+	    ws.send(msg);
+	});
 });

@@ -47,34 +47,13 @@
         (.addLast "encoder" (new HttpResponseEncoder))
         (.addLast "handler" (handler-factory))))))
 
-(defn websocket-upgrade [ctx response]
-  (let [channel (.getChannel ctx)
-        pipeline (.getPipeline channel)]
-    ;(.remove pipeline "aggregator")
-    ;(.replace pipeline "decoder", "wsdecoder", (new WebSocketFrameDecoder))
-    (.write channel response)
-    (println "upgrade response written")
-    ;(.replace pipeline "encoder", "wsencoder", (new WebSocketFrameEncoder))
-    ))
-
-(defn websocket-handshake-response [request]
-  (let [response (new DefaultHttpResponse HttpVersion/HTTP_1_1
-                      (new HttpResponseStatus 101 "Web Socket Protocol Handshake"))]
-    (when-let [protocol (.getHeader "WebSocket-Protocol")]
-      (.addHeader response "WebSocket-Protocol protocol"))
-    (doto response
-      (.addHeader "Upgrade" "WebSocket")
-      (.addHeader "Connection" "Upgrade")
-      (.addHeader "WebSocket-Origin" (.getHeader request "Origin"))
-      (.addHeader "WebSocket-Location" "ws://localhost:8080/websocket"))))
-
-(defn simple-html-response [msg]
+(defn simple-html-response [msg content-type]
   (let [response (new DefaultHttpResponse HttpVersion/HTTP_1_0 HttpResponseStatus/OK)
         buffer (ChannelBuffers/copiedBuffer msg CharsetUtil/UTF_8)]
     (HttpHeaders/setContentLength response (.readableBytes buffer))
     (doto response
       (.setContent buffer)
-      (.setHeader "Content-type" "text/html; charset=UTF-8"))))
+      (.setHeader "Content-type" (str content-type "; charset=UTF-8")))))
 
 (defn simple-channel-handler [msg-handlers]
   (let [handle-up (fn [msg ctx event]
