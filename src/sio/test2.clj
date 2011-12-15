@@ -36,29 +36,19 @@
 
 ;demo
 (def acceleration
-  (spring 10 1))
+  (spring 20 1))
 
-(defn sim [steps ^State init dt]
-  (loop [i steps
-         t 0
-         state init]
-    (when (> i 0)
-      (println i (float t) (float (.x state)) (float (.v state)))
-      (recur (dec i) (+ t dt) (integrate state t dt acceleration)))))
+(defn simulate [state t dt]
+  (integrate state t dt acceleration))
 
+(defn render [^Graphics2D g w h ^State state]
+  (doto g
+    (.setColor Color/black)
+    (.fillRect 0 0 w h)
+    (.setColor Color/white)
+    (.fillRect (- 200 (.x state)) 100 15 15)))
 
-(defn simulate [state]
-  (println "sim")
-  state)
-
-(defn render [^Graphics2D g w h]
-  (let [r (Random.)]
-    (doto g
-      (.setColor Color/black)
-      (.fillRect 0 0 w h)
-      (.setColor Color/white)
-      (.fillRect (.nextInt r w) (.nextInt r h) 5 5))))
-
-(game/start 400 400 25 simulate render (State. 100 0))
+(defn start []
+  (game/start 400 400 25 simulate render (State. 200.0 0)))
         
 ;(sim 100  1/10)

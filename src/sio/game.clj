@@ -11,13 +11,13 @@
   (proxy [JPanel ActionListener] []
     (paintComponent [g]
       (let [^Graphics2D g g
-            ^JPanel this this]
+            ^JPanel this this
+            size (.getSize this)]
         (proxy-super paintComponent g)
-        (let [size (.getSize this)]
-          (render g (.width size) (.height size))
-          (.. Toolkit getDefaultToolkit sync)
-          (.dispose g))))))
-
+        (if-let [state (.getClientProperty this "game.state")]
+          (render g (.width size) (.height size) state))
+        (.. Toolkit getDefaultToolkit sync)
+        (.dispose g)))))
 
 (defn start-interval [interval action]
   (let [listener (reify ActionListener
@@ -26,18 +26,28 @@
         timer (Timer. interval listener)]
     (.start timer)))
 
+;current time seconds
+(defn current-time []
+  (/ (System/nanoTime) 1000000000))
+  
 (defn start [w h fps simulator-func render-func init-state]
   (let [frame (JFrame. "physics")
         ^JPanel panel (render-panel render-func)
-        state (atom init-state)]
+        t0 (current-time)
+        state (atom (list t0 init-state))]
     (doto frame
       (.setSize w h)
       (.setLocationRelativeTo nil)
       (.add panel)
       (.setVisible true))
-    (let [loop
-          (fn [] (doto panel
-                   (.putClientProperty "game.state" (swap! state simulator-func))
-                   (.repaint)))]
+    (letfn [(swapfn [state t]
+              (let [dt (- t (first state))]
+                (list t (simulator-func (second state) (- t t0) dt))))
+            (simulate []
+              (swap! state swapfn (current-time)))
+            (loop []
+              (doto panel
+                (.putClientProperty "game.state" (second (simulate)))
+                (.repaint)))]
       (start-interval (/ 1000 fps) loop))))
 
